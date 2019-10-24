@@ -1,0 +1,20 @@
+pipeline {
+    agent none
+    triggers {
+        pollSCM 'H/5 * * * *'
+    }
+    stages {
+        stage('Deploy on Linux') {
+            agent {
+                label 'DataBoard-DEV'
+            }
+            steps {
+                sh "docker build . -t fakebackendserver || true"
+                sh "docker stop fakebackendserver || true"
+                sh "docker rm fakebackendserver || true"
+                // if you want to expose other port instead of 5001, just modify it.
+                sh "docker run -d -v $WORKSPACE/app:/app -p 5001:80 --name fakebackendserver fakebackendserver"
+            }
+        }
+    }
+}

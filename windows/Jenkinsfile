@@ -1,0 +1,19 @@
+pipeline {
+    agent none
+    triggers {
+        pollSCM 'H/5 * * * *'
+    }
+    stages {
+        stage('Deploy on Windows') {
+            agent {
+                label 'CLOUD_TIS_DEV_TEST'
+            }
+            steps {
+                // See the readme.md under app folder to see how to deploy it on IIS
+                bat "rmdir %userprofile%\\fake_backend_server || exit 0"
+                bat "mkdir %userprofile%\\fake_backend_server || exit 0"
+                bat "xcopy /E /I /Y *.* %userprofile%\\fake_backend_server"
+            }
+        }
+    }
+}
