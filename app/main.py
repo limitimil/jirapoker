@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import requests
-import json
 from flask import jsonify
 from flask import Flask
 from flask import request
@@ -11,7 +9,7 @@ import re
 import logging.config
 
 from config import JIRA_URL
-from services.client import jira_client
+from services.jira_client import jira_client
 from services.mapping import customfield
 from models.issue import Issue
 
@@ -47,7 +45,18 @@ def get_project_issues_in_sprints(project):
         _issue.sprint = issue_sprint
         issues.append(_issue.__dict__)
 
-    return json.dumps(issues, indent=4, sort_keys=False)
+    return jsonify(issues)
+
+
+@app.route('/api/<issue_key>/UpdateStoryPoint', methods=['PUT'])
+def update_story_point(issue_key):
+    json_data = request.json
+
+    issue = jira_client.issue(issue_key)
+    issue.update(fields={customfield['story_point']: json_data['story_point']})
+
+    return 'Update story point successfully', 200
+
 
 @app.errorhandler(Exception)
 def handle_error(e):
