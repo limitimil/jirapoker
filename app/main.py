@@ -10,6 +10,7 @@ import os
 import re
 import logging.config
 
+from config import JIRA_URL
 from services.client import jira_client
 from services.mapping import customfield
 from models.issue import Issue
@@ -39,6 +40,7 @@ def get_project_issues_in_sprints(project):
             issue_story_point = issue.raw['fields'][customfield['story_point']]
 
         _issue = Issue()
+        _issue.url = JIRA_URL + '/browse/{}'.format(issue.key)
         _issue.summary = issue.fields.summary
         _issue.description = issue.fields.description
         _issue.story_point = issue_story_point
