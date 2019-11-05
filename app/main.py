@@ -3,6 +3,9 @@ from flask import jsonify
 from flask import Flask
 from flask import request
 from werkzeug.exceptions import HTTPException
+
+from flask_cors import CORS
+
 import json
 import os
 import re
@@ -22,6 +25,7 @@ logging.config.fileConfig(DEFAULT_LOG_CONFIG)
 logger = logging.getLogger('flask')
 
 app = Flask(__name__)
+CORS(app)
 
 
 @app.route('/api/<project>/GetIssuesInSprints', methods=['GET'])
@@ -38,11 +42,12 @@ def get_project_issues_in_sprints(project):
             issue_story_point = issue.raw['fields'][customfield['story_point']]
 
         _issue = Issue()
-        _issue.url = JIRA_URL + '/browse/{}'.format(issue.key)
-        _issue.summary = issue.fields.summary
-        _issue.description = issue.fields.description
-        _issue.story_point = issue_story_point
-        _issue.sprint = issue_sprint
+        _issue.IssueKey = issue.key
+        _issue.Url = JIRA_URL + '/browse/{}'.format(issue.key)
+        _issue.Summary = issue.fields.summary
+        _issue.Description = issue.fields.description
+        _issue.StoryPoint = issue_story_point
+        _issue.Sprint = issue_sprint
         issues.append(_issue.__dict__)
 
     return jsonify(issues)

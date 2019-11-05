@@ -1,4 +1,4 @@
-from services.client import jira_client
+from services.jira_client import jira_client
 import re
 from services.mapping import customfield
 
@@ -22,3 +22,4 @@ for issue in project_issues:
         sprint_name = re.findall(r"name=[^,]*", str(issue.raw['fields'][customfield['sprint']][0]))[0]
         sprint_name = sprint_name.replace('name=', '')
         print(sprint_name)
+        print(issue.key)

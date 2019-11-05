@@ -1,7 +1,8 @@
 class Issue:
     def __init__(self):
-        self.url = ''
-        self.summary = ''
-        self.story_point = 0.0
-        self.description = ''
-        self.sprint = ''
+        self.IssueKey = ''
+        self.Summary = ''
+        self.StoryPoint = 0.0
+        self.Description = ''
+        self.Sprint = ''
+        self.Url = ''
