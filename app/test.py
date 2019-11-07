@@ -16,10 +16,15 @@ for sprint in sprints:
 """
 project_issues = jira_client.search_issues('project=CTIS AND (SPRINT not in closedSprints() OR SPRINT in openSprints()) AND issuetype not in (Sub-task, 估點, Memo)', startAt=0, maxResults=False)
 for issue in project_issues:
-    if issue.raw['key'] == 'CTIS-1098' or issue.raw['key'] == 'CTIS-1299':
+    if issue.raw['key'] != None:
         # print(issue.fields.__dict__)
+        active_sprint = re.findall(r"state=ACTIVE,name=[^,]*", str(issue.raw['fields'][customfield['sprint']]))
+        future_sprint = re.findall(r"state=FUTURE,name=[^,]*", str(issue.raw['fields'][customfield['sprint']]))
+
+        if active_sprint:
+            issue_sprint = active_sprint[0].replace('state=ACTIVE,name=', '')
+        elif future_sprint:
+            issue_sprint = future_sprint[0].replace('state=FUTURE,name=', '')
         print(issue.raw)
-        sprint_name = re.findall(r"name=[^,]*", str(issue.raw['fields'][customfield['sprint']][0]))[0]
-        sprint_name = sprint_name.replace('name=', '')
-        print(sprint_name)
+        print(issue_sprint)
         print(issue.key)

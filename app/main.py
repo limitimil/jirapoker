@@ -30,12 +30,17 @@ CORS(app)
 
 @app.route('/api/<project>/GetIssuesInSprints', methods=['GET'])
 def get_project_issues_in_sprints(project):
-    project_issues = jira_client.search_issues('project={} AND (SPRINT not in closedSprints() OR SPRINT in openSprints())'.format(project), startAt=0, maxResults=False)
+    project_issues = jira_client.search_issues('project={} AND (SPRINT not in closedSprints() OR SPRINT in openSprints()) AND issuetype not in (Sub-task, 估點, Memo)'.format(project), startAt=0, maxResults=False)
 
     issues = []
     for issue in project_issues:
-        issue_sprint = re.findall(r"name=[^,]*", str(issue.raw['fields'][customfield['sprint']][0]))[0]
-        issue_sprint = issue_sprint.replace('name=', '')
+        active_sprint = re.findall(r"state=ACTIVE,name=[^,]*", str(issue.raw['fields'][customfield['sprint']]))
+        future_sprint = re.findall(r"state=FUTURE,name=[^,]*", str(issue.raw['fields'][customfield['sprint']]))
+
+        if active_sprint:
+            issue_sprint = active_sprint[0].replace('state=ACTIVE,name=', '')
+        elif future_sprint:
+            issue_sprint = future_sprint[0].replace('state=FUTURE,name=', '')
 
         issue_story_point = 0.0
         if customfield['story_point'] in issue.raw['fields'].keys():
