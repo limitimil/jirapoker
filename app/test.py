@@ -28,3 +28,4 @@ for issue in project_issues:
         print(issue.raw)
         print(issue_sprint)
         print(issue.key)
+        jira_client.get_myself_user_profile()
