@@ -17,6 +17,7 @@ from services.mapping import customfield
 from models.issue import Issue
 from models.user import User
 from lib.jira import JIRA
+from jira.exceptions import JIRAError
 
 
 _PATH = os.path.dirname(os.path.abspath(__file__))
@@ -89,9 +90,12 @@ def update_story_point(issue_key):
 
 @app.errorhandler(Exception)
 def handle_error(e):
+    print(type(e))
     code = 500
     if isinstance(e, HTTPException):
         code = e.code
+    elif isinstance(e, JIRAError):
+        code = e.status_code
     logger.error('%s', str(e))
     return jsonify(error=str(e)), code
 
