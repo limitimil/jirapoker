@@ -6,15 +6,14 @@ from werkzeug.exceptions import HTTPException
 
 from flask_cors import CORS
 
-import json
 import os
-import re
 import logging.config
 
 from config import JIRA_URL
 from services.jira_client import jira_client
 from services.mapping import customfield
 from models.issue import Issue
+from models.sprint import Sprint
 from models.user import User
 from lib.jira import JIRA
 from jira.exceptions import JIRAError
@@ -48,34 +47,36 @@ def sign_in():
     return jsonify(user.__dict__)
 
 
-@app.route('/api/<project>/GetIssuesInSprints', methods=['GET'])
-def get_project_issues_in_sprints(project):
-    project_issues = jira_client.search_issues('project={} AND (SPRINT not in closedSprints() OR SPRINT in openSprints()) AND issuetype not in (Sub-task, 估點, Memo)'.format(project), startAt=0, maxResults=False)
+@app.route('/api/IssuesInActiveAndFutureSprints/<board_name>', methods=['GET'])
+def get_issues_in_active_and_future_sprints_in_board(board_name):
+    sprint_names = jira_client.get_active_and_future_sprint_names_in_board(board_name)
 
-    issues = []
-    for issue in project_issues:
-        active_sprint = re.findall(r"state=ACTIVE,name=[^,]*", str(issue.raw['fields'][customfield['sprint']]))
-        future_sprint = re.findall(r"state=FUTURE,name=[^,]*", str(issue.raw['fields'][customfield['sprint']]))
+    issues_in_active_and_future_sprints = []  # [{'sprint_A': ['issue_A', ...]}, {'sprintB': ['issue_C'...]}...]
+    for sprint_name in sprint_names:
+        _issues = jira_client.search_issues('sprint="{}" AND issuetype not in (Sub-task, 估點, Memo)'.format(sprint_name),
+                                            startAt=0,
+                                            maxResults=False)
+        issues = []
+        for _issue in _issues:
+            issue_story_point = 0.0
+            if customfield['story_point'] in _issue.raw['fields'].keys():
+                issue_story_point = _issue.raw['fields'][customfield['story_point']]
 
-        if active_sprint:
-            issue_sprint_name = active_sprint[0].replace('state=ACTIVE,name=', '')
-        elif future_sprint:
-            issue_sprint_name = future_sprint[0].replace('state=FUTURE,name=', '')
+            issue = Issue()
+            issue.issueKey = _issue.key
+            issue.url = JIRA_URL + '/browse/{}'.format(_issue.key)
+            issue.summary = _issue.fields.summary
+            issue.description = _issue.fields.description
+            issue.storyPoint = issue_story_point
+            issue.sprintName = sprint_name
+            issues.append(issue.__dict__)
 
-        issue_story_point = 0.0
-        if customfield['story_point'] in issue.raw['fields'].keys():
-            issue_story_point = issue.raw['fields'][customfield['story_point']]
+        sprint = Sprint()
+        sprint.sprintName = sprint_name
+        sprint.issues = issues
 
-        _issue = Issue()
-        _issue.issueKey = issue.key
-        _issue.url = JIRA_URL + '/browse/{}'.format(issue.key)
-        _issue.summary = issue.fields.summary
-        _issue.description = issue.fields.description
-        _issue.storyPoint = issue_story_point
-        _issue.sprintName = issue_sprint_name
-        issues.append(_issue.__dict__)
-
-    return jsonify(issues)
+        issues_in_active_and_future_sprints.append(sprint.__dict__)
+    return jsonify(issues_in_active_and_future_sprints)
 
 
 @app.route('/api/<issue_key>/UpdateStoryPoint', methods=['PUT'])

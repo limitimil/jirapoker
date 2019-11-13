@@ -14,18 +14,14 @@ for sprint in sprints:
     print(sprint.__dict__)
 
 """
+"""
 project_issues = jira_client.search_issues('project=CTIS AND (SPRINT not in closedSprints() OR SPRINT in openSprints()) AND issuetype not in (Sub-task, 估點, Memo)', startAt=0, maxResults=False)
 for issue in project_issues:
-    if issue.raw['key'] != None:
-        # print(issue.fields.__dict__)
-        active_sprint = re.findall(r"state=ACTIVE,name=[^,]*", str(issue.raw['fields'][customfield['sprint']]))
-        future_sprint = re.findall(r"state=FUTURE,name=[^,]*", str(issue.raw['fields'][customfield['sprint']]))
+    print(issue.fields.sprint.name)
+"""
+a = {1: [2, 3, 4]}
+for key in a.keys():
+    for value in a[key]:
+        value = 5
 
-        if active_sprint:
-            issue_sprint = active_sprint[0].replace('state=ACTIVE,name=', '')
-        elif future_sprint:
-            issue_sprint = future_sprint[0].replace('state=FUTURE,name=', '')
-        print(issue.raw)
-        print(issue_sprint)
-        print(issue.key)
-        jira_client.get_myself_user_profile()
+print(a)
