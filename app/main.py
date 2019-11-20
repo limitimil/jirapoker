@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from flask import jsonify
 from flask import Flask
+from flask_pymongo import PyMongo
 from flask import request
 from werkzeug.exceptions import HTTPException
-
 from flask_cors import CORS
 
 import os
@@ -17,6 +17,9 @@ from models.sprint import Sprint
 from models.user import User
 from lib.jira import JIRA
 from jira.exceptions import JIRAError
+from config import MONGO_URI
+from config import MONGO_USERNAME
+from config import MONGO_PASSWORD
 
 
 _PATH = os.path.dirname(os.path.abspath(__file__))
@@ -27,6 +30,12 @@ logging.config.fileConfig(DEFAULT_LOG_CONFIG)
 logger = logging.getLogger('flask')
 
 app = Flask(__name__)
+app.config.update(
+    MONGO_URI=MONGO_URI,
+    MONGO_USERNAME=MONGO_USERNAME,
+    MONGO_PASSWORD=MONGO_PASSWORD,
+)
+mongo = PyMongo(app)
 CORS(app)
 
 
@@ -87,6 +96,30 @@ def update_story_point(issue_key):
     issue.update(fields={customfield['story_point']: json_data['storyPoint']})
 
     return 'Update story point successfully', 200
+
+
+@app.route('/api/InsertIssueEstimationResult', methods=['POST'])
+def insert_issue_estimation_result():
+    estimation_result = request.json
+    estimation_result_of_user = {'userName': estimation_result['userName'],
+                                 'estimatedStoryPoint': estimation_result['estimatedStoryPoint']}
+
+    estimation_record_of_issue = mongo.db.estimation_result.find_one({'issueKey': estimation_result['issueKey']})
+    if not estimation_record_of_issue:
+        mongo.db.estimation_result.insert_one({'issueKey': estimation_result['issueKey'],
+                                               'results':  [estimation_result_of_user]})
+    else:
+        for index, result in enumerate(estimation_record_of_issue['results']):
+            if estimation_result['userName'] == result['userName']:
+                estimation_record_of_issue['results'][index] = estimation_result_of_user
+                mongo.db.estimation_result.update_one({'_id': estimation_record_of_issue['_id']},
+                                                      {'$set': {'results': estimation_record_of_issue['results']}})
+            elif index - 1 == len(estimation_record_of_issue['results']) and estimation_result['userName'] != result['userName']:
+                estimation_record_of_issue['results'].append(estimation_result_of_user)
+                mongo.db.estimation_result.update_one({'_id': estimation_record_of_issue['_id']},
+                                                      {'$set': {'results': estimation_record_of_issue['results']}})
+
+    return "OK", 200
 
 
 @app.errorhandler(Exception)
