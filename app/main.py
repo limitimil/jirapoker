@@ -5,7 +5,9 @@ from flask_pymongo import PyMongo
 from flask import request
 from werkzeug.exceptions import HTTPException
 from flask_cors import CORS
-
+from bson.objectid import ObjectId
+import datetime
+import json
 import os
 import logging.config
 
@@ -22,6 +24,16 @@ from config import MONGO_USERNAME
 from config import MONGO_PASSWORD
 
 
+class JSONEncoder(json.JSONEncoder):
+    ''' extend json-encoder class'''
+    def default(self, o):
+        if isinstance(o, ObjectId):
+            return str(o)
+        if isinstance(o, datetime.datetime):
+            return str(o)
+        return json.JSONEncoder.default(self, o)
+
+
 _PATH = os.path.dirname(os.path.abspath(__file__))
 _PATH = os.path.join(_PATH, 'logging.ini')
 DEFAULT_LOG_CONFIG = os.path.abspath(_PATH)
@@ -30,6 +42,7 @@ logging.config.fileConfig(DEFAULT_LOG_CONFIG)
 logger = logging.getLogger('flask')
 
 app = Flask(__name__)
+app.json_encoder = JSONEncoder
 app.config.update(
     MONGO_URI=MONGO_URI,
     MONGO_USERNAME=MONGO_USERNAME,
@@ -90,36 +103,34 @@ def get_issues_in_active_and_future_sprints_in_board(board_name):
 
 @app.route('/api/<issue_key>/UpdateStoryPoint', methods=['PUT'])
 def update_story_point(issue_key):
-    json_data = request.json
+    request_body = request.json
 
     issue = jira_client.issue(issue_key)
-    issue.update(fields={customfield['story_point']: json_data['storyPoint']})
+    issue.update(fields={customfield['story_point']: request_body['storyPoint']})
 
     return 'Update story point successfully', 200
 
 
 @app.route('/api/InsertIssueEstimationResult', methods=['POST'])
 def insert_issue_estimation_result():
-    estimation_result = request.json
-    estimation_result_of_user = {'userName': estimation_result['userName'],
-                                 'estimatedStoryPoint': estimation_result['estimatedStoryPoint']}
+    request_body = request.json
 
-    estimation_record_of_issue = mongo.db.estimation_result.find_one({'issueKey': estimation_result['issueKey']})
+    estimation_record_of_issue = mongo.db.estimation_result.find_one({'issueKey': request_body['issueKey'],
+                                                                      'userName': request_body['userName']})
     if not estimation_record_of_issue:
-        mongo.db.estimation_result.insert_one({'issueKey': estimation_result['issueKey'],
-                                               'results':  [estimation_result_of_user]})
+        mongo.db.estimation_result.insert_one(request_body)
     else:
-        for index, result in enumerate(estimation_record_of_issue['results']):
-            if estimation_result['userName'] == result['userName']:
-                estimation_record_of_issue['results'][index] = estimation_result_of_user
-                mongo.db.estimation_result.update_one({'_id': estimation_record_of_issue['_id']},
-                                                      {'$set': {'results': estimation_record_of_issue['results']}})
-            elif index - 1 == len(estimation_record_of_issue['results']) and estimation_result['userName'] != result['userName']:
-                estimation_record_of_issue['results'].append(estimation_result_of_user)
-                mongo.db.estimation_result.update_one({'_id': estimation_record_of_issue['_id']},
-                                                      {'$set': {'results': estimation_record_of_issue['results']}})
+        estimation_record_of_issue.update({'estimatedStoryPoint': request_body['estimatedStoryPoint']})
+        mongo.db.estimation_result.update_one({'_id': estimation_record_of_issue['_id']},
+                                              {'$set': estimation_record_of_issue})
 
     return "OK", 200
+
+
+@app.route('/api/GetIssueEstimationResults/<issue_key>', methods=['GET'])
+def get_issue_estimation_results(issue_key):
+    issue_estimation_results = list(mongo.db.estimation_result.find({'issueKey': issue_key}, {'_id': False}))
+    return jsonify(issue_estimation_results)
 
 
 @app.errorhandler(Exception)
