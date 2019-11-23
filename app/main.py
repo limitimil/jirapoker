@@ -69,7 +69,7 @@ def sign_in():
     return jsonify(user.__dict__)
 
 
-@app.route('/api/IssuesInActiveAndFutureSprints/<board_name>', methods=['GET'])
+@app.route('/api/issue/<board_name>/active-and-future-sprints', methods=['GET'])
 def get_issues_in_active_and_future_sprints_in_board(board_name):
     sprint_names = jira_client.get_active_and_future_sprint_names_in_board(board_name)
 
@@ -101,17 +101,17 @@ def get_issues_in_active_and_future_sprints_in_board(board_name):
     return jsonify(issues_in_active_and_future_sprints)
 
 
-@app.route('/api/<issue_key>/UpdateStoryPoint', methods=['PUT'])
-def update_story_point(issue_key):
+@app.route('/api/issue/story-point', methods=['PUT'])
+def update_story_point_in_jira():
     request_body = request.json
 
-    issue = jira_client.issue(issue_key)
+    issue = jira_client.issue(request_body['issueKey'])
     issue.update(fields={customfield['story_point']: request_body['storyPoint']})
 
     return 'Update story point successfully', 200
 
 
-@app.route('/api/InsertIssueEstimationResult', methods=['POST'])
+@app.route('/api/issue/estimation-result', methods=['POST'])
 def insert_issue_estimation_result():
     request_body = request.json
 
@@ -127,7 +127,7 @@ def insert_issue_estimation_result():
     return "OK", 200
 
 
-@app.route('/api/GetIssueEstimationResults/<issue_key>', methods=['GET'])
+@app.route('/api/issue/<issue_key>/estimation-results', methods=['GET'])
 def get_issue_estimation_results(issue_key):
     issue_estimation_results = list(mongo.db.estimation_result.find({'issueKey': issue_key}, {'_id': False}))
     return jsonify(issue_estimation_results)
