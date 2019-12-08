@@ -1,0 +1,7 @@
+version: '2'
+services:
+  fakebackendserver:
+      build: .
+      ports:
+        - "5001:80"
+      container_name: fakebackendserver
