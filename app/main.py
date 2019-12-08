@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import jsonify
 from flask import Flask
-from flask_pymongo import PyMongo
+from pymongo import MongoClient
 from flask import request
 from werkzeug.exceptions import HTTPException
 from flask_cors import CORS
@@ -10,6 +10,8 @@ import datetime
 import json
 import os
 import logging.config
+from flask_socketio import SocketIO
+from flask_socketio import emit
 
 from config import JIRA_URL
 from services.jira_client import jira_client
@@ -20,8 +22,7 @@ from models.user import User
 from lib.jira import JIRA
 from jira.exceptions import JIRAError
 from config import MONGO_URI
-from config import MONGO_USERNAME
-from config import MONGO_PASSWORD
+from config import DATABASE_NAME
 
 
 class JSONEncoder(json.JSONEncoder):
@@ -42,17 +43,17 @@ logging.config.fileConfig(DEFAULT_LOG_CONFIG)
 logger = logging.getLogger('flask')
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
 app.json_encoder = JSONEncoder
-app.config.update(
-    MONGO_URI=MONGO_URI,
-    MONGO_USERNAME=MONGO_USERNAME,
-    MONGO_PASSWORD=MONGO_PASSWORD,
-)
-mongo = PyMongo(app)
-CORS(app)
+CORS(app, resources={r'/*': {'origins': '*'}})
+
+socketio = SocketIO(app, logger=True, engineio_logger=True)
+
+mongo_client = MongoClient(MONGO_URI)
+jirapoker_db = mongo_client[DATABASE_NAME]
 
 
-@app.route('/api/auth/SignIn', methods=['POST'])
+@app.route('/api/auth/sign-in', methods=['POST'])
 def sign_in():
     json_data = request.json
 
@@ -115,22 +116,19 @@ def update_story_point_in_jira():
 def insert_issue_estimation_result():
     request_body = request.json
 
-    estimation_record_of_issue = mongo.db.estimation_result.find_one({'issueKey': request_body['issueKey'],
-                                                                      'userName': request_body['userName']})
+    estimation_record_of_issue = jirapoker_db.estimation_result.find_one({'issueKey': request_body['issueKey'],
+                                                                          'userName': request_body['userName']})
     if not estimation_record_of_issue:
-        mongo.db.estimation_result.insert_one(request_body)
+        jirapoker_db.estimation_result.insert_one(request_body)
     else:
         estimation_record_of_issue.update({'estimatedStoryPoint': request_body['estimatedStoryPoint']})
-        mongo.db.estimation_result.update_one({'_id': estimation_record_of_issue['_id']},
-                                              {'$set': estimation_record_of_issue})
+        jirapoker_db.estimation_result.update_one({'_id': estimation_record_of_issue['_id']},
+                                                  {'$set': estimation_record_of_issue})
 
+    issue_estimation_results = list(jirapoker_db.estimation_result.find({'issueKey': request_body['issueKey']},
+                                                                        {'_id': False}))
+    socketio.emit('issueEstimatedResults', json.dumps(issue_estimation_results))
     return "OK", 200
-
-
-@app.route('/api/issue/<issue_key>/estimation-results', methods=['GET'])
-def get_issue_estimation_results(issue_key):
-    issue_estimation_results = list(mongo.db.estimation_result.find({'issueKey': issue_key}, {'_id': False}))
-    return jsonify(issue_estimation_results)
 
 
 @app.errorhandler(Exception)
@@ -146,4 +144,6 @@ def handle_error(e):
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=80)
+    socketio.init_app(app, cors_allowed_origins="*")
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    # app.run(host='0.0.0.0', port=80)
