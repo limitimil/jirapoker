@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask import jsonify
-from flask import Flask
+from flask import Flask, render_template
 from pymongo import MongoClient
 from flask import request
 from werkzeug.exceptions import HTTPException
@@ -11,7 +11,6 @@ import json
 import os
 import logging.config
 from flask_socketio import SocketIO
-from flask_socketio import emit
 
 from config import JIRA_URL
 from services.jira_client import jira_client
@@ -45,9 +44,9 @@ logger = logging.getLogger('flask')
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 app.json_encoder = JSONEncoder
-CORS(app, resources={r'/*': {'origins': '*'}})
+CORS(app)
 
-socketio = SocketIO(app, logger=True, engineio_logger=True)
+socketio = SocketIO(app, logger=True, engineio_logger=True, log_output=True, cors_allowed_origins="*")
 
 mongo_client = MongoClient(MONGO_URI)
 jirapoker_db = mongo_client[DATABASE_NAME]
@@ -67,6 +66,12 @@ def sign_in():
     user.userName = user_profile['key']
     user.avatarUrl = user_profile['avatarUrls']['48x48']
 
+    queried_user = jirapoker_db.user.find_one({'userName': user.userName})
+    if queried_user:
+        jirapoker_db.user.update_one({'_id': queried_user['_id']},
+                                     {'$set': user.__dict__})
+    else:
+        jirapoker_db.user.insert_one(user.__dict__)
     return jsonify(user.__dict__)
 
 
@@ -127,8 +132,17 @@ def insert_issue_estimation_result():
 
     issue_estimation_results = list(jirapoker_db.estimation_result.find({'issueKey': request_body['issueKey']},
                                                                         {'_id': False}))
-    socketio.emit('issueEstimatedResults', json.dumps(issue_estimation_results))
+    socketio.emit('currentIssueEstimatedResults', json.dumps(issue_estimation_results))
     return "OK", 200
+
+
+@app.route('/api/user/<user_name>/avatar-url', methods=['GET'])
+def get_user_avatar_url(user_name):
+    queried_user = jirapoker_db.user.find_one({'userName': user_name})
+    if not queried_user:
+        return '', 200
+    else:
+        return queried_user['avatarUrl'], 200
 
 
 @app.errorhandler(Exception)
@@ -143,7 +157,15 @@ def handle_error(e):
     return jsonify(error=str(e)), code
 
 
+@socketio.on('connect')
+def connected():
+    print('Client connected')
+
+@socketio.on('message')
+def connected():
+    print('receive message')
+
+
 if __name__ == "__main__":
-    socketio.init_app(app, cors_allowed_origins="*")
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)
     # app.run(host='0.0.0.0', port=80)
