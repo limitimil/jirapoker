@@ -132,8 +132,14 @@ def insert_issue_estimation_result():
 
     issue_estimation_results = list(jirapoker_db.estimation_result.find({'issueKey': request_body['issueKey']},
                                                                         {'_id': False}))
-    socketio.emit('currentIssueEstimatedResults', json.dumps(issue_estimation_results))
+    socketio.emit('issueEstimationResults', issue_estimation_results)
     return "OK", 200
+
+
+@app.route('/api/issue/<issue_key>/estimation-results', methods=['GET'])
+def get_issue_estimation_results(issue_key):
+    issue_estimation_results = list(jirapoker_db.estimation_result.find({'issueKey': issue_key}, {'_id': False}))
+    return jsonify(issue_estimation_results)
 
 
 @app.route('/api/user/<user_name>/avatar-url', methods=['GET'])
