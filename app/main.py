@@ -121,19 +121,39 @@ def update_story_point_in_jira():
 def insert_issue_estimation_result():
     request_body = request.json
 
-    estimation_record_of_issue = jirapoker_db.estimation_result.find_one({'issueKey': request_body['issueKey'],
-                                                                          'userName': request_body['userName']})
-    if not estimation_record_of_issue:
+    estimation_record_of_issue_by_user = jirapoker_db.estimation_result.find_one({'issueKey': request_body['issueKey'],
+                                                                                  'userName': request_body['userName']})
+    if not estimation_record_of_issue_by_user:
         jirapoker_db.estimation_result.insert_one(request_body)
     else:
-        estimation_record_of_issue.update({'estimatedStoryPoint': request_body['estimatedStoryPoint']})
-        jirapoker_db.estimation_result.update_one({'_id': estimation_record_of_issue['_id']},
-                                                  {'$set': estimation_record_of_issue})
+        estimation_record_of_issue_by_user.update({'estimatedStoryPoint': request_body['estimatedStoryPoint']})
+        jirapoker_db.estimation_result.update_one({'_id': estimation_record_of_issue_by_user['_id']},
+                                                  {'$set': estimation_record_of_issue_by_user})
 
     issue_estimation_results = list(jirapoker_db.estimation_result.find({'issueKey': request_body['issueKey']},
                                                                         {'_id': False}))
     socketio.emit('issueEstimationResults', issue_estimation_results)
     return "OK", 200
+
+
+@app.route('/api/issue/estimated-story-point/<issue_key>/<user_name>', methods=['GET'])
+def get_issue_estimated_story_point(issue_key, user_name):
+    estimation_record_of_issue_by_user = jirapoker_db.estimation_result.find_one({'issueKey': issue_key,
+                                                                                  'userName': user_name},
+                                                                                 {'_id': False})
+    if estimation_record_of_issue_by_user is None:
+        return ''
+    estimated_story_point_by_user = estimation_record_of_issue_by_user['estimatedStoryPoint']
+    return estimated_story_point_by_user, 200
+
+
+@app.route('/api/user/<user_name>/estimated-issue-keys', methods=['GET'])
+def get_user_estimated_issues(user_name):
+    user_estimated_issues = list(jirapoker_db.estimation_result.find({'userName': user_name}, {'_id': False}))
+    user_estimated_issue_keys = []
+    for user_estimated_issue in user_estimated_issues:
+        user_estimated_issue_keys.append(user_estimated_issue['issueKey'])
+    return jsonify(user_estimated_issue_keys)
 
 
 @app.route('/api/issue/<issue_key>/estimation-results', methods=['GET'])
