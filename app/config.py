@@ -1,7 +1,7 @@
 # Jira auth
 JIRA_URL = 'https://cybersoft4u.atlassian.net'
-JIRA_USER = 'shanesyu@cybersoft4u.com'
-JIRA_TOKEN = '3Ly3KC2JpPSvD72tQyzg9FE1'
+JIRA_USER = 'xxxx'
+JIRA_TOKEN = 'xxxx'
 
 # Mongo db connection
 MONGO_URI = 'mongodb://localhost:27017'

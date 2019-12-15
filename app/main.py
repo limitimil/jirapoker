@@ -141,10 +141,42 @@ def get_issue_estimated_story_point(issue_key, user_name):
     estimation_record_of_issue_by_user = jirapoker_db.estimation_result.find_one({'issueKey': issue_key,
                                                                                   'userName': user_name},
                                                                                  {'_id': False})
-    if estimation_record_of_issue_by_user is None:
+    if not estimation_record_of_issue_by_user:
         return ''
     estimated_story_point_by_user = estimation_record_of_issue_by_user['estimatedStoryPoint']
     return estimated_story_point_by_user, 200
+
+
+@app.route('/api/issue/status', methods=['POST'])
+def insert_issue_status():
+    request_body = request.json
+    issue_status_record = jirapoker_db.issue_status.find_one({'issueKey': request_body['issueKey']})
+    if not issue_status_record:
+        jirapoker_db.issue_status.insert_one(request_body)
+    else:
+        issue_status_record.update({'isRevealed': request_body['isRevealed']})
+        jirapoker_db.estimation_result.update_one({'_id': issue_status_record['_id']},
+                                                  {'$set': issue_status_record})
+
+    socketio.emit('issueStatus', {'issueKey': request_body['issueKey'],
+                                  'isRevealed': request_body['isRevealed']})
+    return 'OK', 200
+
+
+@app.route('/api/issue/<issue_key>/status', methods=['DELETE'])
+def delete_issue_status(issue_key):
+    jirapoker_db.issue_status.remove({'issueKey': issue_key})
+    socketio.emit('issueStatus', {'issueKey': issue_key,
+                                  'isRevealed': False})
+    return 'OK', 200
+
+
+@app.route('/api/issue/<issue_key>/status/<status_name>', methods=['GET'])
+def get_issue_revealed_status(issue_key, status_name):
+    issue_status_record = jirapoker_db.issue_status.find_one({'issueKey': issue_key})
+    if not issue_status_record or issue_status_record[status_name] is False:
+        return jsonify(False), 200
+    return jsonify(True), 200
 
 
 @app.route('/api/user/<user_name>/estimated-issue-keys', methods=['GET'])
@@ -186,6 +218,7 @@ def handle_error(e):
 @socketio.on('connect')
 def connected():
     print('Client connected')
+
 
 @socketio.on('message')
 def connected():
