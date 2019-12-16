@@ -136,6 +136,13 @@ def insert_issue_estimation_result():
     return "OK", 200
 
 
+@app.route('/api/issue/<issue_key>/estimation-results', methods=['DELETE'])
+def delete_issue_estimation_results(issue_key):
+    jirapoker_db.estimation_result.delete_many({'issueKey': issue_key})
+    socketio.emit('deleteIssueEstimationResults', issue_key)
+    return "OK", 200
+
+
 @app.route('/api/issue/estimated-story-point/<issue_key>/<user_name>', methods=['GET'])
 def get_issue_estimated_story_point(issue_key, user_name):
     estimation_record_of_issue_by_user = jirapoker_db.estimation_result.find_one({'issueKey': issue_key,
@@ -158,7 +165,7 @@ def insert_issue_status():
         jirapoker_db.estimation_result.update_one({'_id': issue_status_record['_id']},
                                                   {'$set': issue_status_record})
 
-    socketio.emit('issueStatus', {'issueKey': request_body['issueKey'],
+    socketio.emit('InsertIssueStatus', {'issueKey': request_body['issueKey'],
                                   'isRevealed': request_body['isRevealed']})
     return 'OK', 200
 
@@ -166,13 +173,12 @@ def insert_issue_status():
 @app.route('/api/issue/<issue_key>/status', methods=['DELETE'])
 def delete_issue_status(issue_key):
     jirapoker_db.issue_status.remove({'issueKey': issue_key})
-    socketio.emit('issueStatus', {'issueKey': issue_key,
-                                  'isRevealed': False})
+    socketio.emit('deleteIssueStatus', issue_key)
     return 'OK', 200
 
 
 @app.route('/api/issue/<issue_key>/status/<status_name>', methods=['GET'])
-def get_issue_revealed_status(issue_key, status_name):
+def get_issue_status(issue_key, status_name):
     issue_status_record = jirapoker_db.issue_status.find_one({'issueKey': issue_key})
     if not issue_status_record or issue_status_record[status_name] is False:
         return jsonify(False), 200
@@ -182,9 +188,9 @@ def get_issue_revealed_status(issue_key, status_name):
 @app.route('/api/user/<user_name>/estimated-issue-keys', methods=['GET'])
 def get_user_estimated_issues(user_name):
     user_estimated_issues = list(jirapoker_db.estimation_result.find({'userName': user_name}, {'_id': False}))
-    user_estimated_issue_keys = []
+    user_estimated_issue_keys = {}
     for user_estimated_issue in user_estimated_issues:
-        user_estimated_issue_keys.append(user_estimated_issue['issueKey'])
+        user_estimated_issue_keys[user_estimated_issue['issueKey']] = True
     return jsonify(user_estimated_issue_keys)
 
 
