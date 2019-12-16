@@ -46,7 +46,7 @@ app.config['SECRET_KEY'] = 'secret!'
 app.json_encoder = JSONEncoder
 CORS(app)
 
-socketio = SocketIO(app, logger=True, engineio_logger=True, log_output=True, cors_allowed_origins="*")
+socketio = SocketIO(app, logger=True, engineio_logger=True, log_output=True, cors_allowed_origins="*", async_mode='threading')
 
 mongo_client = MongoClient(MONGO_URI)
 jirapoker_db = mongo_client[DATABASE_NAME]
