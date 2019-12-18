@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
-import os
+import config
 import logging.config
 from controllers.auth_controller import auth
 from controllers.issue_controller import issue
@@ -18,10 +18,8 @@ def create_app():
 
 
 def create_logger():
-    _PATH = os.path.dirname(os.path.abspath(__file__))
-    _PATH = os.path.join(_PATH, 'logging.ini')
-    _DEFAULT_LOG_CONFIG = os.path.abspath(_PATH)
-    logging.config.fileConfig(_DEFAULT_LOG_CONFIG)
+
+    logging.config.fileConfig(config.DEFAULT_LOG_CONFIG)
     logger = logging.getLogger('flask')
     return logger
 
