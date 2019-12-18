@@ -1,8 +1,5 @@
 from flask import Flask
 from flask_cors import CORS
-import json
-from bson.objectid import ObjectId
-import datetime
 import os
 import logging.config
 from controllers.auth_controller import auth

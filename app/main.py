@@ -9,8 +9,8 @@ from werkzeug.exceptions import HTTPException
 from jira.exceptions import JIRAError
 
 from database.jirapoker_db import jirapoker_db
-from app import create_logger
-from app import create_app
+from modules.app_init import create_logger
+from modules.app_init import create_app
 
 
 logger = create_logger()
