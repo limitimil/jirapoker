@@ -11,21 +11,11 @@ from controllers.user_controller import user
 
 
 def create_app():
-    class JSONEncoder(json.JSONEncoder):
-        ''' extend json-encoder class'''
-
-        def default(self, o):
-            if isinstance(o, ObjectId):
-                return str(o)
-            if isinstance(o, datetime.datetime):
-                return str(o)
-            return json.JSONEncoder.default(self, o)
     app = Flask(__name__)
     app.register_blueprint(auth)
     app.register_blueprint(issue)
     app.register_blueprint(user)
     app.config['SECRET_KEY'] = 'secret!'
-    app.json_encoder = JSONEncoder
     CORS(app)
     return app
 
