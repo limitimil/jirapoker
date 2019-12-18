@@ -10,7 +10,6 @@ from controllers.issue_controller import issue
 from controllers.user_controller import user
 
 
-
 def create_app():
     class JSONEncoder(json.JSONEncoder):
         ''' extend json-encoder class'''

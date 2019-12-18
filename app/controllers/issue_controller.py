@@ -57,10 +57,6 @@ def insert_issue_estimation_result():
         jirapoker_db.estimation_result.update_one({'_id': estimation_record_of_issue_by_user['_id']},
                                                   {'$set': estimation_record_of_issue_by_user})
 
-    issue_estimation_results = list(jirapoker_db.estimation_result.find({'issueKey': request_body['issueKey']},
-                                                                        {'_id': False}))
-    from main import socketio
-    socketio.emit('issueEstimationResults', issue_estimation_results)
     return "OK", 200
 
 
@@ -74,8 +70,6 @@ def get_issue_estimation_results(issue_key):
 def delete_issue_estimation_results(issue_key):
     jirapoker_db.estimation_result.delete_many({'issueKey': issue_key})
 
-    from main import socketio
-    socketio.emit('deleteIssueEstimationResults', issue_key)
     return "OK", 200
 
 # issue story point
@@ -111,9 +105,6 @@ def insert_issue_status():
         jirapoker_db.estimation_result.update_one({'_id': issue_status_record['_id']},
                                                   {'$set': issue_status_record})
 
-    from main import socketio
-    socketio.emit('InsertIssueStatus', {'issueKey': request_body['issueKey'],
-                                  'isRevealed': request_body['isRevealed']})
     return 'OK', 200
 
 
@@ -129,7 +120,5 @@ def get_issue_status(issue_key, status_name):
 def delete_issue_status(issue_key):
     jirapoker_db.issue_status.remove({'issueKey': issue_key})
 
-    from main import socketio
-    socketio.emit('deleteIssueStatus', issue_key)
     return 'OK', 200
 

@@ -8,6 +8,7 @@ from flask_socketio import SocketIO
 from werkzeug.exceptions import HTTPException
 from jira.exceptions import JIRAError
 
+from database.jirapoker_db import jirapoker_db
 from app import create_logger
 from app import create_app
 
@@ -28,6 +29,29 @@ def handle_error(e):
         code = e.status_code
     logger.error('%s', str(e))
     return jsonify(error=str(e)), code
+
+
+@socketio.on('insertIssueEstimationResult')
+def return_estimation_results(issue_key):
+    issue_estimation_results = list(jirapoker_db.estimation_result.find({'issueKey': issue_key},
+                                                                        {'_id': False}))
+    socketio.emit('updateCurrentIssueEstimationResults', issue_estimation_results)
+
+
+@socketio.on('deleteIssueEstimationResults')
+def delete_issue_estiamtion_results(issue_key):
+    socketio.emit('resetCurrentIssue', issue_key)
+    socketio.emit('resetUserEstimatedIssueKey', issue_key)
+
+
+@socketio.on('insertIssueStatus')
+def insert_issue_status(status):
+    socketio.emit('updateCurrentIssueStatus', status)
+
+
+@socketio.on('deleteIssueStatus')
+def delete_issue_status(issue_key):
+    socketio.emit('resetCurrentIssueStatus', issue_key)
 
 
 @socketio.on('connect')
