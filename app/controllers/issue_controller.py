@@ -48,10 +48,13 @@ def get_issues_in_active_and_future_sprints_in_board(board_name):
 def insert_issue_estimation_result():
     request_body = request.json
 
+    user = jirapoker_db.user.find_one({'accountId': request_body['accountId']})
     estimation_record_of_issue_by_user = jirapoker_db.estimation_result.find_one({'issueKey': request_body['issueKey'],
-                                                                                  'userName': request_body['userName']})
+                                                                                  'userId': user['_id']})
     if not estimation_record_of_issue_by_user:
-        jirapoker_db.estimation_result.insert_one(request_body)
+        jirapoker_db.estimation_result.insert_one({'issueKey': request_body['issueKey'],
+                                                   'userId': user['_id'],
+                                                   'estimatedStoryPoint': request_body['estimatedStoryPoint']})
     else:
         estimation_record_of_issue_by_user.update({'estimatedStoryPoint': request_body['estimatedStoryPoint']})
         jirapoker_db.estimation_result.update_one({'_id': estimation_record_of_issue_by_user['_id']},
@@ -63,7 +66,15 @@ def insert_issue_estimation_result():
 @issue.route('/api/issue/<issue_key>/estimation-results', methods=['GET'])
 def get_issue_estimation_results(issue_key):
     issue_estimation_results = list(jirapoker_db.estimation_result.find({'issueKey': issue_key}, {'_id': False}))
-    return jsonify(issue_estimation_results)
+    returned_issue_estimation_results = []
+    for issue_estimation_result in issue_estimation_results:
+        user = jirapoker_db.user.find_one({'_id': issue_estimation_result['userId']},
+                                          {'_id': False})
+        issue_estimation_result.pop('userId')
+        issue_estimation_result['user'] = user
+        returned_issue_estimation_results.append(issue_estimation_result)
+
+    return jsonify(returned_issue_estimation_results)
 
 
 @issue.route('/api/issue/<issue_key>/estimation-results', methods=['DELETE'])
@@ -73,10 +84,11 @@ def delete_issue_estimation_results(issue_key):
     return "OK", 200
 
 # issue story point
-@issue.route('/api/issue/estimated-story-point/<issue_key>/<user_name>', methods=['GET'])
-def get_issue_estimated_story_point(issue_key, user_name):
+@issue.route('/api/issue/estimated-story-point/<issue_key>/<account_id>', methods=['GET'])
+def get_issue_estimated_story_point(issue_key, account_id):
+    user = jirapoker_db.user.find_one({'accountId': account_id})
     estimation_record_of_issue_by_user = jirapoker_db.estimation_result.find_one({'issueKey': issue_key,
-                                                                                  'userName': user_name},
+                                                                                  'userId': user['_id']},
                                                                                  {'_id': False})
     if not estimation_record_of_issue_by_user:
         return ''

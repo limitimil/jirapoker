@@ -5,9 +5,10 @@ from database.jirapoker_db import jirapoker_db
 user = Blueprint('user', __name__)
 
 
-@user.route('/api/user/<user_name>/estimated-issue-keys', methods=['GET'])
-def get_user_estimated_issues(user_name):
-    user_estimated_issues = list(jirapoker_db.estimation_result.find({'userName': user_name}, {'_id': False}))
+@user.route('/api/user/<account_id>/estimated-issue-keys', methods=['GET'])
+def get_user_estimated_issues(account_id):
+    user = jirapoker_db.user.find_one({'accountId': account_id})
+    user_estimated_issues = list(jirapoker_db.estimation_result.find({'userId': user['_id']}, {'_id': False}))
     user_estimated_issue_keys = {}
     for user_estimated_issue in user_estimated_issues:
         user_estimated_issue_keys[user_estimated_issue['issueKey']] = True

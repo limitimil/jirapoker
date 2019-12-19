@@ -33,9 +33,16 @@ def handle_error(e):
 
 @socketio.on('insertIssueEstimationResult')
 def return_estimation_results(issue_key):
-    issue_estimation_results = list(jirapoker_db.estimation_result.find({'issueKey': issue_key},
-                                                                        {'_id': False}))
-    socketio.emit('updateCurrentIssueEstimationResults', issue_estimation_results)
+    issue_estimation_results = list(jirapoker_db.estimation_result.find({'issueKey': issue_key}, {'_id': False}))
+    returned_issue_estimation_results = []
+    for issue_estimation_result in issue_estimation_results:
+        user = jirapoker_db.user.find_one({'_id': issue_estimation_result['userId']},
+                                          {'_id': False})
+        issue_estimation_result.pop('userId')
+        issue_estimation_result['user'] = user
+        returned_issue_estimation_results.append(issue_estimation_result)
+    socketio.emit('updateCurrentIssueEstimationResults', returned_issue_estimation_results)
+    socketio.emit('updateUserEstimatedIssueKey', issue_key)
 
 
 @socketio.on('deleteIssueEstimationResults')
