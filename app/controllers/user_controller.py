@@ -1,6 +1,8 @@
 from flask import Blueprint
 from flask import jsonify
 from database.jirapoker_db import jirapoker_db
+from services.jira_client import jira_client
+from models.user import User
 
 user = Blueprint('user', __name__)
 
@@ -22,3 +24,15 @@ def get_user_avatar_url(user_name):
         return '', 200
     else:
         return queried_user['avatarUrl'], 200
+
+
+@user.route('/api/user-profile/<account_id>', methods=['GET'])
+def get_user_profile(account_id):
+    user = jira_client.get_user(account_id)
+
+    user_profile = User()
+    user_profile.accountId = user['accountId']
+    user_profile.avatarUrl = user['avatarUrls']['48x48']
+    user_profile.userName = user['displayName']
+    return jsonify(user_profile.__dict__), 200
+

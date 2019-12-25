@@ -9,6 +9,14 @@ class JIRA(JIRA):
         user_profile_json = self._get_json(route_api)
         return user_profile_json
 
+    def get_user(self, account_id):
+        route_api = 'user'
+        query = {
+           'accountId': account_id
+        }
+        user_json = self._get_json(route_api, params=query)
+        return user_json
+
     def get_sprints_in_board(self, board_name):
         boards = self.boards(name=board_name)
         if not boards:
