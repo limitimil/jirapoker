@@ -29,4 +29,6 @@ def sign_in():
                                      {'$set': user.__dict__})
     else:
         jirapoker_db.user.insert_one(user.__dict__)
+        # insert_one will return _id which can not be serialized
+        user.__dict__.pop('_id')
     return jsonify(user.__dict__)

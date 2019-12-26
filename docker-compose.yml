@@ -7,8 +7,8 @@ services:
       environment:
         - MONGO_DB_NAME=jirapoker
         - MONGO_HOST_NAME=mongodb
-        - JIRA_USER=stevenlin@cybersoft4u.com
-        - JIRA_TOKEN=PrAoN3kwLhyiAiFGLYeQ25C3
+        - JIRA_USER=
+        - JIRA_TOKEN=
       container_name: jirapokerbackend
       depends_on:
         - mongodb
