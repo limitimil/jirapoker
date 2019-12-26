@@ -1,7 +1,37 @@
 version: '2'
 services:
-  fakebackendserver:
+  jirapokerbackend:
       build: .
       ports:
         - "5001:80"
-      container_name: fakebackendserver
+      environment:
+        - MONGO_DB_NAME=jirapoker
+        - MONGO_HOST_NAME=mongodb
+        - JIRA_USER=stevenlin@cybersoft4u.com
+        - JIRA_TOKEN=PrAoN3kwLhyiAiFGLYeQ25C3
+      container_name: jirapokerbackend
+      depends_on:
+        - mongodb
+      networks:
+        - frontend
+        - backend
+
+  mongodb:
+    image: mongo:4.0.8
+    container_name: mongodb
+    restart: unless-stopped
+    command: mongod --auth
+    environment:
+      - MONGO_INITDB_DATABASE=jirapoker
+      - MONGODB_DATA_DIR=/data/db
+      - MONDODB_LOG_DIR=/dev/null
+    volumes:
+      - mongodbdata="/data/db"
+    networks:
+      - backend
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
