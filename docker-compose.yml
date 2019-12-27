@@ -9,6 +9,8 @@ services:
         - MONGO_HOST_NAME=mongodb
         - JIRA_USER=
         - JIRA_TOKEN=
+        - BACKEND_HOST=localhost
+        - BACKEND_PORT=5000
       container_name: jirapokerbackend
       depends_on:
         - mongodb
