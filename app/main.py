@@ -16,7 +16,7 @@ from modules.app_init import create_app
 logger = create_logger()
 app = create_app()
 
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 
 @app.errorhandler(Exception)
