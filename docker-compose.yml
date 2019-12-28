@@ -3,14 +3,12 @@ services:
   jirapokerbackend:
       build: .
       ports:
-        - "5001:80"
+        - "5000:5000"
       environment:
         - MONGO_DB_NAME=jirapoker
         - MONGO_HOST_NAME=mongodb
         - JIRA_USER=
         - JIRA_TOKEN=
-        - BACKEND_HOST=localhost
-        - BACKEND_PORT=5000
       container_name: jirapokerbackend
       depends_on:
         - mongodb
