@@ -45,7 +45,7 @@ def return_estimation_results(issue_key):
             issue_estimation_result['user'] = user
             returned_issue_estimation_results.append(issue_estimation_result)
         socketio.emit('updateCurrentIssueEstimationResults', returned_issue_estimation_results)
-        socketio.emit('updateUserEstimatedIssueKey', {'userAccountId': user.accountId, 'issueKey': issue_key})
+        socketio.emit('updateUserEstimatedIssueKey', {'userAccountId': user['accountId'], 'issueKey': issue_key})
 
 
 @socketio.on('deleteIssueEstimationResults')
