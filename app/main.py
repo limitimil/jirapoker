@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
+import eventlet
+# To make std library non-blocking(here will blocked by requests)
+eventlet.monkey_patch()
 os.environ['PYTHONPATH'] = os.path.dirname(__file__)
 print(os.environ['PYTHONPATH'])
 
@@ -11,7 +14,6 @@ from jira.exceptions import JIRAError
 from database.jirapoker_db import jirapoker_db
 from modules.app_init import create_logger
 from modules.app_init import create_app
-
 
 logger = create_logger()
 app = create_app()
