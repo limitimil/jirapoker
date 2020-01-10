@@ -3,13 +3,14 @@ from flask import jsonify
 from flask import request
 from config import JIRA_URL
 from services.jira_client import jira_client
-from services.mapping import customfield
 from models.issue import Issue
 from models.sprint import Sprint
 from database.jirapoker_db import jirapoker_db
 
 issue = Blueprint('issue', __name__)
 
+# fields mapping is mainly used for custom field which can make the code more readable
+fields_mapping = jira_client.get_fields_mapping()
 
 # get issues
 @issue.route('/api/issue/<board_name>/active-and-future-sprints', methods=['GET'])
@@ -17,6 +18,7 @@ def get_issues_in_active_and_future_sprints_in_board(board_name):
     sprint_names = jira_client.get_active_and_future_sprint_names_in_board(board_name)
 
     issues_in_active_and_future_sprints = []  # [{'sprint_A': ['issue_A', ...]}, {'sprintB': ['issue_C'...]}...]
+
     for sprint_name in sprint_names:
         _issues = jira_client.search_issues('sprint="{}" AND issuetype not in (Sub-task, 估點, Memo)'.format(sprint_name),
                                             startAt=0,
@@ -24,12 +26,14 @@ def get_issues_in_active_and_future_sprints_in_board(board_name):
         issues = []
         for _issue in _issues:
             issue_story_point = 0.0
-            if customfield['story_point'] in _issue.raw['fields'].keys():
-                issue_story_point = _issue.raw['fields'][customfield['story_point']]
+            if fields_mapping['Story Points'] in _issue.raw['fields'].keys():
+                issue_story_point = _issue.raw['fields'][fields_mapping['Story Points']]
 
             issue = Issue()
             issue.issueKey = _issue.key
             issue.url = JIRA_URL + '/browse/{}'.format(_issue.key)
+            issue.iconUrl = _issue.fields.issuetype.iconUrl
+            issue.issueType = _issue.fields.issuetype.name
             issue.summary = _issue.fields.summary
             issue.description = _issue.fields.description
             issue.storyPoint = issue_story_point
@@ -101,7 +105,7 @@ def update_story_point_in_jira():
     request_body = request.json
 
     issue = jira_client.issue(request_body['issueKey'])
-    issue.update(fields={customfield['story_point']: request_body['storyPoint']})
+    issue.update(fields={fields_mapping['Story Points']: request_body['storyPoint']})
 
     return 'Update story point successfully', 200
 
