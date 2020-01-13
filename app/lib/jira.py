@@ -1,4 +1,5 @@
 from jira import JIRA
+import unicodedata
 
 
 class JIRA(JIRA):
@@ -8,6 +9,17 @@ class JIRA(JIRA):
         route_api = 'myself'
         user_profile_json = self._get_json(route_api)
         return user_profile_json
+
+    def get_fields_mapping(self):
+        """ Turn fields got from jira api into {'field_name': 'field_id'} mapping
+
+        :return: field_mapping: dict
+        """
+        field_mapping = {}
+        for field in self.fields():
+            field['name'] = unicodedata.normalize("NFKD", field['name'])
+            field_mapping[field['name']] = field['id']
+        return field_mapping
 
     def get_user(self, account_id):
         route_api = 'user'
