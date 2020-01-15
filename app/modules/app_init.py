@@ -5,6 +5,7 @@ import logging.config
 from controllers.auth_controller import auth
 from controllers.issue_controller import issue
 from controllers.user_controller import user
+from controllers.game_controller import game
 
 
 def create_app():
@@ -12,6 +13,7 @@ def create_app():
     app.register_blueprint(auth)
     app.register_blueprint(issue)
     app.register_blueprint(user)
+    app.register_blueprint(game)
     app.config['SECRET_KEY'] = 'secret!'
     CORS(app)
     return app
