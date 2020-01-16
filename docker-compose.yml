@@ -18,6 +18,8 @@ services:
 
   mongodb:
     image: mongo:4.0.8
+    ports:
+      - "27017:27017"
     container_name: mongodb
     restart: unless-stopped
     environment:
