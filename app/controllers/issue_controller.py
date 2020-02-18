@@ -3,6 +3,7 @@ from flask import jsonify
 from flask import request
 from config import JIRA_URL
 from services.jira_client import jira_client
+from services.twist_fate import twistfate
 from models.issue import Issue
 from models.sprint import Sprint
 from database.jirapoker_db import jirapoker_db
@@ -77,7 +78,11 @@ def get_issue_estimation_results(issue_key):
         issue_estimation_result.pop('userId')
         issue_estimation_result['user'] = user
         returned_issue_estimation_results.append(issue_estimation_result)
-
+    if issue_estimation_result and !next(k for k in issue_estimation_result if k['userId'] == twistfate.name):
+        returned_issue_estimation_results.append({'issueKey': issue_key,
+                                                   'userId': twistfate.name,
+                                                   'estimatedStoryPoint': twistfate.estimation_result(issue_key)}
+)
     return jsonify(returned_issue_estimation_results)
 
 
