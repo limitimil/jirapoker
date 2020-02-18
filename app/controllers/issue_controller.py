@@ -78,12 +78,11 @@ def get_issue_estimation_results(issue_key):
         issue_estimation_result.pop('userId')
         issue_estimation_result['user'] = user
         returned_issue_estimation_results.append(issue_estimation_result)
-    if issue_estimation_result and !next(k for k in issue_estimation_result if k['userId'] == twistfate.name):
+    if True:
         returned_issue_estimation_results.append({'issueKey': issue_key,
                                                    'userId': twistfate.name,
-                                                   'estimatedStoryPoint': twistfate.estimation_result(issue_key)}
+                                                   'estimatedStoryPoint': twistfate.evaluate_story_point(issue_key)}
 )
-    return jsonify(returned_issue_estimation_results)
 
 
 @issue.route('/api/issue/<issue_key>/estimation-results', methods=['DELETE'])
